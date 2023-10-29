@@ -23,7 +23,7 @@ class UserRoles(enum.Enum):
 
 
 class Sessions(models.Model):
-    session = models.TextField
+    session = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
 
 

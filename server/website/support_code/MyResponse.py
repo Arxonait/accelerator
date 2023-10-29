@@ -4,6 +4,8 @@ class MyResponse:
         self.response_status = response_status
         if errors is None:
             self.errors = []
+        else:
+            self.errors = errors
 
     def to_dict(self):
         return self.__dict__

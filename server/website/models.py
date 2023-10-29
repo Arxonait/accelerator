@@ -4,10 +4,10 @@ from django.db import models
 
 
 # Create your models here.
-class Users(models.Model):
+class User(models.Model):
     name = models.TextField()
-    phone = models.TextField(max_length=11)
-    email = models.TextField()
+    phone = models.TextField(max_length=11, null=True)
+    email = models.TextField(unique=True)
     password = models.TextField()
 
     about_user = models.TextField(null=True)
@@ -22,13 +22,18 @@ class UserRoles(enum.Enum):
     company = "уполномоченный от предприятия"
 
 
+class Sessions(models.Model):
+    session = models.TextField
+    time_created = models.DateTimeField(auto_now_add=True)
+
+
 class ServiceSectors(models.Model):
     name_sector = models.TextField()
     about = models.TextField()
 
 
 class Services(models.Model):
-    user = models.ForeignKey("Users", on_delete=models.CASCADE)
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
     sector = models.ForeignKey("ServiceSectors", on_delete=models.CASCADE)
 
     type_service = models.TextField()
@@ -47,13 +52,12 @@ class TypesService(enum.Enum):
 
 class Applications(models.Model):
     executor = models.ForeignKey("Services", on_delete=models.CASCADE)
-    customer = models.ForeignKey("Users", on_delete=models.CASCADE)
+    customer = models.ForeignKey("User", on_delete=models.CASCADE)
     status = models.TextField()  # todo определить тип или enum
 
 
 class Messages(models.Model):
-    user = models.ForeignKey("Users", on_delete=models.CASCADE)
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
     application = models.ForeignKey("Applications", on_delete=models.CASCADE)
-    time_created = models.DateTimeField()
+    time_created = models.DateTimeField(auto_now_add=True)
     main_text = models.TextField()
-

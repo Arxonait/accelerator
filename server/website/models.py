@@ -45,3 +45,15 @@ class TypesService(enum.Enum):
     company = "предприятие"
 
 
+class Applications(models.Model):
+    executor = models.ForeignKey("Services", on_delete=models.CASCADE)
+    customer = models.ForeignKey("Users", on_delete=models.CASCADE)
+    status = models.TextField()  # todo определить тип или enum
+
+
+class Messages(models.Model):
+    user = models.ForeignKey("Users", on_delete=models.CASCADE)
+    application = models.ForeignKey("Applications", on_delete=models.CASCADE)
+    time_created = models.DateTimeField()
+    main_text = models.TextField()
+

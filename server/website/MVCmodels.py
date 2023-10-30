@@ -28,3 +28,8 @@ def enter_user(input_user: EnterUser) -> Tuple[User, Sessions]:
     session = Sessions(session=str(session_id))
     session.save()
     return user, session
+
+
+def model_services_sector():
+    services_sector = ServiceSectors.objects.filter()
+    return services_sector

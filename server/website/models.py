@@ -30,6 +30,8 @@ class Sessions(models.Model):
 class ServiceSectors(models.Model):
     name_sector = models.TextField()
     about = models.TextField()
+    image_url = models.TextField()
+    slug = models.TextField()
 
 
 class Services(models.Model):

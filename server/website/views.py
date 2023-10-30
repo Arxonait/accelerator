@@ -9,13 +9,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from website.PydanticModels import RegUser, EnterUser
 from website.support_code.MyResponse import MyResponse
-from website.MVCmodels import reg_user, enter_user
+from website.MVCmodels import reg_user, enter_user, model_services_sector
 from website.support_code.MySerialize import serialize
 
 
 # Create your views here.
 @csrf_exempt
-def registration_user(request: HttpRequest):
+def registration_user_json(request: HttpRequest):
     try:
         user = RegUser(**json.loads(request.body))
     except ValidationError as e:
@@ -42,7 +42,7 @@ def registration_user(request: HttpRequest):
 
 
 @csrf_exempt
-def login(request: HttpRequest):
+def login_json(request: HttpRequest):
     try:
         user = EnterUser(**json.loads(request.body))
     except ValidationError as e:
@@ -68,5 +68,31 @@ def login(request: HttpRequest):
             "field": serialize(session)
         }
     ]
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def load_page_login(request: HttpRequest):
+    return render(request, ...)
+
+
+def load_page_reg(request: HttpRequest):
+    return render(request, ...)
+
+
+def load_page_main(request: HttpRequest):
+    return render(request, ...)
+
+
+@csrf_exempt
+def service_sector_json(request: HttpRequest):
+    data = []
+    services_sector = model_services_sector()
+    for service in services_sector:
+        data_dict = {
+            "type_obj": "services_sector",
+            "field": serialize(service)
+        }
+        data.append(data_dict)
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)

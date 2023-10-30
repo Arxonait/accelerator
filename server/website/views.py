@@ -1,13 +1,14 @@
+import datetime
 import json
-
 
 from pydantic import ValidationError
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from website.PydanticModels import RegUser, EnterUser
+from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import reg_user, enter_user, model_services_sector
 from website.support_code.MySerialize import serialize
@@ -69,7 +70,9 @@ def login_json(request: HttpRequest):
         }
     ]
     response = MyResponse(data, 200)
-    return JsonResponse(response.to_dict(), status=response.response_status)
+    response = JsonResponse(response.to_dict(), status=response.response_status)
+    response.set_cookie("session_id", session.session, max_age=datetime.timedelta(days=1))
+    return response
 
 
 def load_page_login(request: HttpRequest):
@@ -94,5 +97,33 @@ def service_sector_json(request: HttpRequest):
             "field": serialize(service)
         }
         data.append(data_dict)
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def load_page_personal_cabinet(request: HttpRequest):
+    session_id = request.COOKIES.get("session_id", None)
+    try:
+        session = auth.session_is_valid(session_id)
+    except Exception as e:
+        return redirect("/login")
+    user = session.user
+    return render(request, ...)
+
+
+def get_user_on_session_id(request: HttpRequest):
+    session_id = request.COOKIES.get("session_id", None)
+    try:
+        session = auth.session_is_valid(session_id)
+    except Exception as e:
+        response = MyResponse([], 404, [str(e)])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    user = session.user
+    data = [
+        {
+            "type_obj": "users",
+            "field": serialize(user)
+        }
+    ]
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)

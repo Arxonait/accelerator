@@ -25,6 +25,7 @@ class UserRoles(enum.Enum):
 class Sessions(models.Model):
     session = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
 
 
 class ServiceSectors(models.Model):

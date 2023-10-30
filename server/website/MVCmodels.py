@@ -25,7 +25,7 @@ def enter_user(input_user: EnterUser) -> Tuple[User, Sessions]:
     if user.password != convert_password_to_hash(input_user.password):
         raise Exception("Wrong password")
     session_id = uuid.uuid4()
-    session = Sessions(session=str(session_id))
+    session = Sessions(session=str(session_id), user_id=user.pk)
     session.save()
     return user, session
 

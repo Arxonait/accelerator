@@ -66,12 +66,12 @@ def login_json(request: HttpRequest):
         },
         {
             "type_obj": "sessions",
-            "field": serialize(session)
+            "field": serialize(session) # todo убрать
         }
     ]
     response = MyResponse(data, 200)
     response = JsonResponse(response.to_dict(), status=response.response_status)
-    response.set_cookie("session_id", session.session, max_age=datetime.timedelta(days=1))
+    response.set_cookie("session_id", session.session, max_age=auth.EXP_SESSION)
     return response
 
 
@@ -111,7 +111,7 @@ def load_page_personal_cabinet(request: HttpRequest):
     return render(request, ...)
 
 
-def get_user_on_session_id(request: HttpRequest):
+def get_user_by_session_id(request: HttpRequest):
     session_id = request.COOKIES.get("session_id", None)
     try:
         session = auth.session_is_valid(session_id)
@@ -122,7 +122,7 @@ def get_user_on_session_id(request: HttpRequest):
     data = [
         {
             "type_obj": "users",
-            "field": serialize(user)
+            "field": serialize(user, ("password", ))
         }
     ]
     response = MyResponse(data, 200)

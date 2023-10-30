@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from website.PydanticModels import RegUser, EnterUser
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
-from website.MVCmodels import reg_user, enter_user, model_services_sector
+from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services
 from website.support_code.MySerialize import serialize
 
 
@@ -63,10 +63,6 @@ def login_json(request: HttpRequest):
         {
             "type_obj": "users",
             "field": user_dict
-        },
-        {
-            "type_obj": "sessions",
-            "field": serialize(session)  # todo убрать
         }
     ]
     response = MyResponse(data, 200)
@@ -121,5 +117,26 @@ def get_user_by_session_id(*args, request: HttpRequest, session, **kwargs):
             "field": serialize(user, ("password",))
         }
     ]
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def services_json(request: HttpRequest):
+    type_services = request.GET.get("type_services")
+    if type_services is None:
+        error = "None type services"
+        response = MyResponse([], 409, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    req_sectors: str = request.GET.get("sectors")
+    if req_sectors is not None:
+        req_sectors: list = req_sectors.replace(" ", "").split(",")
+    services = model_services(type_services, req_sectors)
+
+    data = []
+    for service in services:
+        data.append({
+            "type_obj": "services",
+            "field": serialize(service)
+        })
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)

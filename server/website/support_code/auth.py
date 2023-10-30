@@ -32,7 +32,7 @@ def use_auth(func):
         except Exception as e:
             response = MyResponse([], 401, [str(e)])
             return JsonResponse(response.to_dict(), status=response.response_status)
-        # todo есть доступ или нет
+        # todo есть доступ или нет (403)
         session, status_update = time_to_update_session(session)
         response: JsonResponse = func(request=request, *args, session=session, **kwargs)
         if status_update:

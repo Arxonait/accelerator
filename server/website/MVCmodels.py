@@ -33,3 +33,10 @@ def enter_user(input_user: EnterUser) -> Tuple[User, Sessions]:
 def model_services_sector():
     services_sector = ServiceSectors.objects.filter()
     return services_sector
+
+
+def model_services(type_services: str, sectors: list[str] | None = None):
+    services = Services.objects.filter(type_service=type_services).select_related("sector")
+    if sectors is not None:
+        services = services.filter(sector__slug__in=sectors)
+    return services

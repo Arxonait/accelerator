@@ -51,7 +51,7 @@ class Services(models.Model):
 class TypesService(enum.Enum):
     engineer = "инжинер"
     company = "предприятие"
-
+    # todo в бд испольщовать англ
 
 class Applications(models.Model):
     executor = models.ForeignKey("Services", on_delete=models.CASCADE)

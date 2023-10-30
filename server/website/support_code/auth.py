@@ -15,6 +15,7 @@ def session_is_valid(session_id: str) -> Sessions:
     sessions = Sessions.objects.filter(session=session_id)
     if len(sessions) == 0:
         raise Exception("No found session in bd")
+
     session: Sessions = sessions[0]
     time_created = session.time_created.astimezone(pytz.timezone('UTC'))
     now = datetime.datetime.now().astimezone(pytz.timezone("UTC"))
@@ -24,13 +25,33 @@ def session_is_valid(session_id: str) -> Sessions:
 
 
 def use_auth(func):
-    def wrapper(*args, request: HttpRequest, **kwargs):
+    def wrapper(request: HttpRequest, *args, **kwargs):
         session_id = request.COOKIES.get("session_id")
         try:
             session = session_is_valid(session_id)
         except Exception as e:
             response = MyResponse([], 401, [str(e)])
             return JsonResponse(response.to_dict(), status=response.response_status)
-        return func(*args, **kwargs, session=session)
+        # todo есть доступ или нет
+        session, status_update = time_to_update_session(session)
+        response: JsonResponse = func(request=request, *args, session=session, **kwargs)
+        if status_update:
+            response.set_cookie("session_id", session.session, max_age=EXP_SESSION)
+        return response
 
     return wrapper
+
+
+def update_session(session: Sessions):
+    session.time_created = datetime.datetime.utcnow()
+    session.save()
+    return session
+
+
+def time_to_update_session(session: Sessions):
+    time_created = session.time_created.astimezone(pytz.timezone("UTC"))
+    now = datetime.datetime.now().astimezone(pytz.timezone("UTC"))
+    if now - time_created > EXP_SESSION/2:
+        session = update_session(session)
+        return session, True
+    return session, False

@@ -66,7 +66,7 @@ def login_json(request: HttpRequest):
         },
         {
             "type_obj": "sessions",
-            "field": serialize(session) # todo убрать
+            "field": serialize(session)  # todo убрать
         }
     ]
     response = MyResponse(data, 200)
@@ -111,18 +111,14 @@ def load_page_personal_cabinet(request: HttpRequest):
     return render(request, ...)
 
 
-def get_user_by_session_id(request: HttpRequest):
-    session_id = request.COOKIES.get("session_id", None)
-    try:
-        session = auth.session_is_valid(session_id)
-    except Exception as e:
-        response = MyResponse([], 404, [str(e)])
-        return JsonResponse(response.to_dict(), status=response.response_status)
+@auth.use_auth
+def get_user_by_session_id(*args, request: HttpRequest, session, **kwargs):
+
     user = session.user
     data = [
         {
             "type_obj": "users",
-            "field": serialize(user, ("password", ))
+            "field": serialize(user, ("password",))
         }
     ]
     response = MyResponse(data, 200)

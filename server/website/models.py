@@ -44,14 +44,15 @@ class Services(models.Model):
     name_service = models.TextField()
     price = models.FloatField()
     about = models.TextField()
+    time_created = models.DateTimeField(auto_now_add=True)
 
     name_company = models.TextField(null=True)
 
 
 class TypesService(enum.Enum):
-    engineer = "инжинер"
+    engineer = "инженер"
     company = "предприятие"
-    # todo в бд испольщовать англ
+
 
 class Applications(models.Model):
     executor = models.ForeignKey("Services", on_delete=models.CASCADE)

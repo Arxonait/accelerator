@@ -36,7 +36,7 @@ def model_services_sector():
 
 
 def model_services(type_services: str, sectors: list[str] | None = None):
-    services = Services.objects.filter(type_service=type_services).select_related("sector")
+    services = Services.objects.filter(type_service=type_services).select_related("sector", "user")
     if sectors is not None:
         services = services.filter(sector__slug__in=sectors)
     return services

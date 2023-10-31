@@ -25,16 +25,23 @@ def session_is_valid(session_id: str) -> Sessions:
 
 
 def use_auth(func):
-    def wrapper(request: HttpRequest, *args, **kwargs):
+    def wrapper(request: HttpRequest, user_id: int = None, *args, **kwargs):
         session_id = request.COOKIES.get("session_id")
+        response: MyResponse
         try:
             session = session_is_valid(session_id)
         except Exception as e:
             response = MyResponse([], 401, [str(e)])
             return JsonResponse(response.to_dict(), status=response.response_status)
-        # todo есть доступ или нет (403)
+
+        if user_id is not None:
+            if session.user.pk != user_id:
+                error = "No access"
+                response = MyResponse([], 403, [error])
+                return JsonResponse(response.to_dict(), status=response.response_status)
+
         session, status_update = time_to_update_session(session)
-        response: JsonResponse = func(request=request, *args, session=session, **kwargs)
+        response: JsonResponse = func(request=request, user_id=user_id, *args, session=session, **kwargs)
         if status_update:
             response.set_cookie("session_id", session.session, max_age=EXP_SESSION)
         return response

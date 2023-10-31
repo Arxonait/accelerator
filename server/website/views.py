@@ -11,7 +11,7 @@ from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services
 from website.support_code.MySerialize import serialize
-from website.models import TypesService
+from website.models import TypesService, Sessions
 
 
 # Create your views here.
@@ -71,8 +71,18 @@ def login_json(request: HttpRequest):
     return response
 
 
+@auth.use_auth
+def edit_personal_data(request: HttpRequest, user_id: int, session: Sessions):
+    try:
+        user = EnterUser(**json.loads(request.body))
+    except ValidationError as e:
+        error: list = e.errors()
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+
 def load_page_login(request: HttpRequest):
-    return render(request, ...)
+    return render(request, "website/...")
 
 
 def load_page_reg(request: HttpRequest):

@@ -9,4 +9,5 @@ urlpatterns = [
     path("api/session_to_user", views.get_user_by_session_id),
     path("api/services", views.services_json),
     path("api/users/<int:user_id>", views.edit_personal_data),
+    path("api/users/<int:user_id>/services", views.services_json)
 ]

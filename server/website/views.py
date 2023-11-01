@@ -89,18 +89,6 @@ def edit_personal_data(request: HttpRequest, user_id: int, session: Sessions):
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
 
-def load_page_login(request: HttpRequest):
-    return render(request, "website/...")
-
-
-def load_page_reg(request: HttpRequest):
-    return render(request, ...)
-
-
-def load_page_main(request: HttpRequest):
-    return render(request, ...)
-
-
 @csrf_exempt
 def service_sector_json(request: HttpRequest):
     data = []
@@ -139,26 +127,22 @@ def get_user_by_session_id(request: HttpRequest, session):
     return JsonResponse(response.to_dict(), status=response.response_status)
 
 
-def services_json(request: HttpRequest):
+def services_json(request: HttpRequest, user_id: int = None):
 
     type_services = request.GET.get("type_service")
-    if type_services is None:
-        error = "Required type_service"
-        response = MyResponse([], 409, [error])
-        return JsonResponse(response.to_dict(), status=response.response_status)
-    try:
-        type_services = getattr(TypesService, type_services).value
-    except AttributeError as e:
-        error = f"Допустимые значения для type_services {[type_services_name.name for type_services_name in TypesService]}"
-        response = MyResponse([], 409, [error])
-        return JsonResponse(response.to_dict(), status=response.response_status)
+    if type_services is not None:
+        try:
+            type_services = getattr(TypesService, type_services).value
+        except AttributeError as e:
+            error = f"Допустимые значения для type_services {[type_services_name.name for type_services_name in TypesService]}"
+            response = MyResponse([], 409, [error])
+            return JsonResponse(response.to_dict(), status=response.response_status)
 
     req_sectors: str = request.GET.get("sectors")
     if req_sectors is not None:
         req_sectors: list = req_sectors.replace(" ", "").split(",")
 
-    print(type_services, req_sectors)
-    services = model_services(type_services, req_sectors)
+    services = model_services(type_services, req_sectors, user_id)
 
     include = request.GET.get("include", "").replace(" ", "").split(",")
 

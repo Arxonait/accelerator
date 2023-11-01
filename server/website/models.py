@@ -6,13 +6,14 @@ from django.db import models
 # Create your models here.
 class User(models.Model):
     name = models.TextField()
+    surname = models.TextField()
+    second_name = models.TextField(null=True)
     phone = models.TextField(max_length=11, null=True)
     email = models.TextField(unique=True)
+    birthday = models.DateTimeField(null=True)
     password = models.TextField()
 
-    about_user = models.TextField(null=True)
-    payer_number = models.TextField(max_length=12, null=True)
-    state_number = models.TextField(max_length=15, null=True)
+    unstructured_data = models.TextField(null=True)
     role = models.TextField(null=True)
 
 

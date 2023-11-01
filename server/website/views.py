@@ -6,10 +6,10 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from website.PydanticModels import RegUser, EnterUser
+from website.PydanticModels import RegUser, EnterUser, EditUser
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
-from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services
+from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services, model_edit_user
 from website.support_code.MySerialize import serialize
 from website.models import TypesService, Sessions
 
@@ -71,15 +71,23 @@ def login_json(request: HttpRequest):
     return response
 
 
+@csrf_exempt
 @auth.use_auth
 def edit_personal_data(request: HttpRequest, user_id: int, session: Sessions):
     try:
-        user = EnterUser(**json.loads(request.body))
+        user = EditUser(**json.loads(request.body))
     except ValidationError as e:
         error: list = e.errors()
         response = MyResponse([], 400, error)
         return JsonResponse(response.to_dict(), status=response.response_status)
+    user = model_edit_user(user_id, user)
 
+    data = [{
+        "type_obj": "users",
+        "fields": serialize(user, ("password",))
+    }]
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
 
 def load_page_login(request: HttpRequest):
     return render(request, "website/...")

@@ -6,12 +6,12 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from website.PydanticModels import RegUser, EnterUser, EditUser
+from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services, model_edit_user
 from website.support_code.MySerialize import serialize
-from website.models import TypesService, Sessions
+from website.models import TypesService, Sessions, Services
 
 
 # Create your views here.
@@ -89,6 +89,7 @@ def edit_personal_data(request: HttpRequest, user_id: int, session: Sessions):
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
 
+
 @csrf_exempt
 def service_sector_json(request: HttpRequest):
     data = []
@@ -103,19 +104,9 @@ def service_sector_json(request: HttpRequest):
     return JsonResponse(response.to_dict(), status=response.response_status)
 
 
-def load_page_personal_cabinet(request: HttpRequest):
-    session_id = request.COOKIES.get("session_id", None)
-    try:
-        session = auth.session_is_valid(session_id)
-    except Exception as e:
-        return redirect("/login")
-    user = session.user
-    return render(request, ...)
-
 
 @auth.use_auth
 def get_user_by_session_id(request: HttpRequest, session):
-
     user = session.user
     data = [
         {
@@ -127,8 +118,19 @@ def get_user_by_session_id(request: HttpRequest, session):
     return JsonResponse(response.to_dict(), status=response.response_status)
 
 
-def services_json(request: HttpRequest, user_id: int = None):
+@csrf_exempt
+def main_controller_services(request: HttpRequest, user_id: int = None):
+    if request.method == "GET":
+        return get_controller_services(request, user_id)
+    elif request.method == "POST":
+        return post_controller_services(request)
+    else:
+        error = f"Allowed method GET and POST"
+        response = MyResponse([], 405, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
 
+
+def get_controller_services(request: HttpRequest, user_id: int = None):
     type_services = request.GET.get("type_service")
     if type_services is not None:
         try:
@@ -144,28 +146,76 @@ def services_json(request: HttpRequest, user_id: int = None):
 
     services = model_services(type_services, req_sectors, user_id)
 
-    include = request.GET.get("include", "").replace(" ", "").split(",")
-
     data = []
     for service in services:
-        relationship = []
-        if "user" in include:
-            data_user = {
-                "type_obj": "users",
-                "filed": serialize(service.user, ("password",))
-            }
-            relationship.append(data_user)
-        if "sector" in include:
-            data_sector = {
-                "type_obj": "services_sector",
-                "filed": serialize(service.sector)
-            }
-            relationship.append(data_sector)
-
         data.append({
             "type_obj": "services",
             "field": serialize(service),
-            "relationship": relationship
+            "relationship": support_include_services(service, request.GET.get("include"))
         })
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+@auth.use_auth
+def post_controller_services(request: HttpRequest, session: Sessions, user_id=None):
+    try:
+        input_services = CreatedServices(**json.loads(request.body))
+    except ValidationError as e:
+        error: list = e.errors()
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    except Exception as e:
+        error = [str(e)]
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    return JsonResponse(input_services.model_dump(), status=200)
+
+
+def support_include_services(service: Services, include: str):
+    if include is None:
+        return []
+    include = include.replace(" ", "").split(",")  # повторяющиеся операция
+    relationship = []
+    if "user" in include:
+        data_user = {
+            "type_obj": "users",
+            "filed": serialize(service.user, ("password",))
+        }
+        relationship.append(data_user)
+    if "sector" in include:
+        data_sector = {
+            "type_obj": "services_sector",
+            "filed": serialize(service.sector)
+        }
+        relationship.append(data_sector)
+    return relationship
+
+
+def main_controller_user_services(request: HttpRequest, services_id: int = None):
+    if request.method == "GET":
+        return get_controller_user_services(request, services_id)
+    elif request.method == "PATCH":
+        pass
+    else:
+        error = f"Allowed method GET and PATCH"
+        response = MyResponse([], 405, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def get_controller_user_services(request: HttpRequest, services_id: int = None):
+    services = model_services(services_id=services_id)
+    if len(services) == 0:
+        error = f"No found"
+        response = MyResponse([], 404, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    service = services[0]
+    data = [
+        {
+            "type_obj": "services",
+            "field": serialize(service),
+            "relationship": support_include_services(service, request.GET.get("include"))
+        }
+    ]
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)

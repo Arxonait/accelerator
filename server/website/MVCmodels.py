@@ -39,7 +39,8 @@ def model_services_sector():
     return services_sector
 
 
-def model_services(type_services: str = None, sectors: list[str] | None = None, user_id: int = None):
+def model_services(type_services: str = None, sectors: list[str] | None = None, user_id: int = None,
+                   services_id: int = None) -> list[Services]:
     condition = dict()
     if type_services is not None:
         condition["type_service"] = type_services
@@ -47,10 +48,9 @@ def model_services(type_services: str = None, sectors: list[str] | None = None, 
         condition["sector__slug__in"] = sectors
     if user_id is not None:
         condition["user_id"] = user_id
+    if services_id is not None:
+        condition["pk"] = services_id
     services = Services.objects.filter(**condition).select_related("sector", "user")
-    # services = Services.objects.filter(type_service=type_services).select_related("sector", "user")
-    # if sectors is not None:
-    #     services = services.filter(sector__slug__in=sectors)
     return services
 
 

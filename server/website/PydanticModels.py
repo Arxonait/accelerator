@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ValidationError, field_validator, model_validator, model_serializer
 from pytz import timezone
+from website.models import TypesService
 
 
 class RegUser(BaseModel):
@@ -49,4 +50,25 @@ class EditUser(BaseModel):
             return date.replace(tzinfo=timezone("Europe/London"))
         return None
 
+
+class CreatedServices(BaseModel):
+    sector: int
+
+    type_service: TypesService
+
+    name_service: str
+    price: int
+    about: str
+    name_company: str = None
+
+    @model_validator(mode='after')
+    def check_passwords_match(self) -> 'CreatedServices':
+        if self.type_service == TypesService.engineer and self.name_company is not None:
+            raise Exception('Для инженера не должно быть имя предприятия')
+        elif self.type_service == TypesService.company and self.name_company is None:
+            raise Exception('Для предприятия должно быть имя предприятия')
+        else:
+            return self
+
+    # @model_serializer()
 

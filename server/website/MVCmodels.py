@@ -12,8 +12,8 @@ from django.db import IntegrityError
 
 
 def reg_user(input_user: RegUser) -> User:
-    name = f"{input_user.name} {input_user.surname}"
-    user = User(name=name, password=convert_password_to_hash(input_user.password), email=input_user.email)
+    user = User(name=input_user.name, surname=input_user.surname, password=convert_password_to_hash(input_user.password),
+                email=input_user.email)
     try:
         user.save()
     except IntegrityError as e:
@@ -45,6 +45,8 @@ def model_services(type_services: str = None, sectors: list[str] | None = None, 
         condition["type_service"] = type_services
     if sectors is not None:
         condition["sector__slug__in"] = sectors
+    if user_id is not None:
+        condition["user_id"] = user_id
     services = Services.objects.filter(**condition).select_related("sector", "user")
     # services = Services.objects.filter(type_service=type_services).select_related("sector", "user")
     # if sectors is not None:

@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+from pytz import timezone
 
 
 class RegUser(BaseModel):
@@ -16,26 +18,35 @@ class EnterUser(BaseModel):
 
 
 class UnstructuredDataUser(BaseModel):
-    about_user: Optional[str] = None
-    education: Optional[str] = None
-    qualification: Optional[str] = None
-    payer_number: Optional[str] = None
+    about_user: str = None
+    education: str = None
+    qualification: str = None
+    payer_number: str = None
 
-    name_company: Optional[str] = None
-    products: Optional[str] = None
-    tech_spec_prod: Optional[str] = None
-    equipment_tech: Optional[str] = None
-    services: Optional[str] = None
-    terms_cooperation: Optional[str] = None
+    name_company: str = None
+    products: str = None
+    tech_spec_prod: str = None
+    equipment_tech: str = None
+    services: str = None
+    terms_cooperation: str = None
 
 
 class EditUser(BaseModel):
-    name: Optional[str] = None
-    second_name: Optional[str] = None
-    surname: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    birthday: Optional[int] = None
+    name: str = None
+    second_name: str = None
+    surname: str = None
+    email: str = None
+    phone: str = None
+    birthday: int = None # unix время в часовом поясе UTC
+    role: str = None  # клиент, инженер, предприятие
 
     unstructured_data: Optional[UnstructuredDataUser] = None
+
+    @validator('birthday')
+    def convert_unix_to_datetime(cls, v):
+        if v is not None:
+            date = datetime.utcfromtimestamp(v)
+            return date.replace(tzinfo=timezone("Europe/London"))
+        return None
+
 

@@ -9,7 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
-from website.MVCmodels import reg_user, enter_user, model_services_sector, model_services, model_edit_user
+from website.MVCmodels import (reg_user, enter_user, model_services_sector, model_services, model_edit_user,
+                               model_create_service)
 from website.support_code.MySerialize import serialize
 from website.models import TypesService, Sessions, Services
 
@@ -160,7 +161,7 @@ def get_controller_services(request: HttpRequest, user_id: int = None):
 @auth.use_auth
 def post_controller_services(request: HttpRequest, session: Sessions, user_id=None):
     try:
-        input_services = CreatedServices(**json.loads(request.body))
+        input_service = CreatedServices(**json.loads(request.body))
     except ValidationError as e:
         error: list = e.errors()
         response = MyResponse([], 400, error)
@@ -169,7 +170,22 @@ def post_controller_services(request: HttpRequest, session: Sessions, user_id=No
         error = [str(e)]
         response = MyResponse([], 400, error)
         return JsonResponse(response.to_dict(), status=response.response_status)
-    return JsonResponse(input_services.model_dump(), status=200)
+
+    try:
+        service = model_create_service(input_service, session.user_id)
+    except Exception as e:
+        error = [str(e)]
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    data = [
+        {
+            "type_obj": "services",
+            "field": serialize(service)
+        }
+    ]
+    response = MyResponse(data, 201)
+    return JsonResponse(response.to_dict(), status=response.response_status)
 
 
 def support_include_services(service: Services, include: str):
@@ -219,3 +235,7 @@ def get_controller_user_services(request: HttpRequest, services_id: int = None):
     ]
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+@auth.use_auth
+def patch_controller_service()

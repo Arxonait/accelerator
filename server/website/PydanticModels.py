@@ -70,5 +70,19 @@ class CreatedServices(BaseModel):
         else:
             return self
 
-    # @model_serializer()
+    @model_serializer()
+    def serialize(self):
+        ser = self.__dict__.copy()
+        ser["type_service"] = ser["type_service"].value
+        return ser
 
+
+class EditService(CreatedServices):
+    sector: int = Field(default=None, serialization_alias="sector_id")
+
+    type_service: TypesService = Field(default=None)
+
+    name_service: str = Field(default=None)
+    price: int = Field(default=None)
+    about: str = Field(default=None)
+    name_company: str = Field(default=None)

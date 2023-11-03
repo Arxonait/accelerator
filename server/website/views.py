@@ -6,11 +6,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices
+from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import (reg_user, enter_user, model_services_sector, model_services, model_edit_user,
-                               model_create_service)
+                               model_create_service, model_edit_service)
 from website.support_code.MySerialize import serialize
 from website.models import TypesService, Sessions, Services
 
@@ -74,18 +74,18 @@ def login_json(request: HttpRequest):
 
 @csrf_exempt
 @auth.use_auth
-def edit_personal_data(request: HttpRequest, user_id: int, session: Sessions):
+def edit_personal_data(request: HttpRequest, session: Sessions):
     try:
-        user = EditUser(**json.loads(request.body))
+        edit_data_user = EditUser(**json.loads(request.body))
     except ValidationError as e:
         error: list = e.errors()
         response = MyResponse([], 400, error)
         return JsonResponse(response.to_dict(), status=response.response_status)
-    user = model_edit_user(user_id, user)
+    edit_data_user = model_edit_user(session.user_id, edit_data_user)
 
     data = [{
         "type_obj": "users",
-        "fields": serialize(user, ("password",))
+        "fields": serialize(edit_data_user, ("password",))
     }]
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
@@ -159,7 +159,7 @@ def get_controller_services(request: HttpRequest, user_id: int = None):
 
 
 @auth.use_auth
-def post_controller_services(request: HttpRequest, session: Sessions, user_id=None):
+def post_controller_services(request: HttpRequest, session: Sessions):
     try:
         input_service = CreatedServices(**json.loads(request.body))
     except ValidationError as e:
@@ -208,11 +208,12 @@ def support_include_services(service: Services, include: str):
     return relationship
 
 
+@csrf_exempt
 def main_controller_user_services(request: HttpRequest, services_id: int = None):
     if request.method == "GET":
         return get_controller_user_services(request, services_id)
     elif request.method == "PATCH":
-        pass
+        return patch_controller_user_service(request, services_id=services_id)
     else:
         error = f"Allowed method GET and PATCH"
         response = MyResponse([], 405, [error])
@@ -238,4 +239,30 @@ def get_controller_user_services(request: HttpRequest, services_id: int = None):
 
 
 @auth.use_auth
-def patch_controller_service()
+def patch_controller_user_service(request: HttpRequest, services_id: int = None, session: Sessions = None):
+    try:
+        edit_data_service = EditService(**json.loads(request.body))
+    except ValidationError as e:
+        error: list = e.errors()
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    except Exception as e:
+        error = [str(e)]
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    try:
+        service = model_edit_service(services_id, session.user_id, edit_data_service)
+    except Exception as e:
+        error = [str(e)]
+        response = MyResponse([], 403, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    data = [
+        {
+            "type_obj": "services",
+            "field": serialize(service)
+        }
+    ]
+    response = MyResponse(data, 201)
+    return JsonResponse(response.to_dict(), status=response.response_status)

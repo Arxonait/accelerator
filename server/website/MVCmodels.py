@@ -90,6 +90,7 @@ def model_edit_service(service_id: int, user_id: int, service: EditService):
     if service_bd.user_id != user_id:
         raise Exception("Not allowed edit service")
     data = service.model_dump(exclude_none=True)
+    print(data)
     Services.objects.filter(id=service_id).update(**data)
     service_bd.refresh_from_db()
     return service_bd

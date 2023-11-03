@@ -73,8 +73,13 @@ class CreatedServices(BaseModel):
     @model_serializer()
     def serialize(self):
         ser = self.__dict__.copy()
-        ser["type_service"] = ser["type_service"].value
-        return ser
+        if ser["type_service"] is not None:
+            ser["type_service"] = ser["type_service"].value
+        ser_exc_none = dict()
+        for key in ser:
+            if ser[key] is not None:
+                ser_exc_none[key] = ser[key]
+        return ser_exc_none
 
 
 class EditService(CreatedServices):

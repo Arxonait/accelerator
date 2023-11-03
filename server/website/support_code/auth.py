@@ -41,7 +41,7 @@ def use_auth(func):
                 return JsonResponse(response.to_dict(), status=response.response_status)
 
         session, status_update = time_to_update_session(session)
-        response: JsonResponse = func(request=request, user_id=user_id, *args, session=session, **kwargs)
+        response: JsonResponse = func(request=request, *args, session=session, **kwargs)
         if status_update:
             response.set_cookie("session_id", session.session, max_age=EXP_SESSION)
         return response

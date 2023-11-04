@@ -58,7 +58,14 @@ class TypesService(enum.Enum):
 class Applications(models.Model):
     executor = models.ForeignKey("Services", on_delete=models.CASCADE)
     customer = models.ForeignKey("User", on_delete=models.CASCADE)
-    status = models.TextField()  # todo определить тип или enum
+    status = models.TextField(null=True)
+    time_created = models.DateTimeField(auto_now_add=True)
+
+
+class StatusApp(enum.Enum):
+    processing = "обработка"
+    denied = "отказано"
+    completed = "завершено"
 
 
 class Messages(models.Model):

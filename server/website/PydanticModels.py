@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, validator, ValidationError, field_validator, model_validator, model_serializer
 from pytz import timezone
-from website.models import TypesService
+from website.models import TypesService, StatusApp
 
 
 class RegUser(BaseModel):
@@ -38,7 +38,7 @@ class EditUser(BaseModel):
     surname: str = None
     email: str = None
     phone: str = None
-    birthday: int = None # unix время в часовом поясе UTC
+    birthday: int = None  # unix время в часовом поясе UTC
     role: str = None  # клиент, инженер, предприятие
 
     unstructured_data: Optional[UnstructuredDataUser] = None
@@ -91,3 +91,8 @@ class EditService(CreatedServices):
     price: int = Field(default=None)
     about: str = Field(default=None)
     name_company: str = Field(default=None)
+
+
+class PostApp(BaseModel):
+    executor_id: int
+    customer_id: int

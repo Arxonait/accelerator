@@ -6,11 +6,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService
+from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService, PostApp
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import (reg_user, enter_user, model_services_sector, model_services, model_edit_user,
-                               model_create_service, model_edit_service)
+                               model_create_service, model_edit_service, model_create_app)
 from website.support_code.MySerialize import serialize
 from website.models import TypesService, Sessions, Services
 
@@ -265,4 +265,74 @@ def patch_controller_user_service(request: HttpRequest, services_id: int = None,
         }
     ]
     response = MyResponse(data, 201)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+@csrf_exempt
+def main_controller_user_applications(request: HttpRequest, user_id: int = None):
+    if request.method == "GET":
+        return ...
+    elif request.method == "POST":
+        return ...
+    else:
+        error = f"Allowed method GET and POST"
+        response = MyResponse([], 405, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+@csrf_exempt
+def main_controller_applications(request: HttpRequest, app_id: int):
+    if request.method == "GET":
+        status = request.GET.get("status")
+        if status is None:
+            return ...
+        else:
+            return ...
+    elif request.method == "POST":
+        return post_controller_applications(request)
+    else:
+        error = f"Allowed method GET and POST"
+        response = MyResponse([], 405, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+@auth.use_auth
+def post_controller_applications(request: HttpRequest, session=None):
+    try:
+        new_app = PostApp(**json.loads(request.body))
+    except ValidationError as e:
+        error: list = e.errors()
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    try:
+        app = model_create_app(new_app)
+    except Exception as e:
+        error = [str(e)]
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    data = [
+        {
+            "type_obj": "applications",
+            "field": serialize(app)
+        }
+    ]
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def get_controller_application(request: HttpRequest, app_id: int):
+    services = model_services(services_id=services_id)
+    if len(services) == 0:
+        error = f"No found"
+        response = MyResponse([], 404, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+    service = services[0]
+    data = [
+        {
+            "type_obj": "services",
+            "field": serialize(service),
+            "relationship": support_include_services(service, request.GET.get("include"))
+        }
+    ]
+    response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)

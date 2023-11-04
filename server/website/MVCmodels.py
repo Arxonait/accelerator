@@ -6,7 +6,7 @@ from typing import Tuple
 from pytz import timezone
 
 from website.models import *
-from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService
+from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService, PostApp
 from website.support_code.hash_password import convert_password_to_hash
 from django.db import IntegrityError
 
@@ -90,7 +90,16 @@ def model_edit_service(service_id: int, user_id: int, service: EditService):
     if service_bd.user_id != user_id:
         raise Exception("Not allowed edit service")
     data = service.model_dump(exclude_none=True)
-    print(data)
     Services.objects.filter(id=service_id).update(**data)
     service_bd.refresh_from_db()
     return service_bd
+
+
+def model_create_app(new_app: PostApp):
+    app = Applications(customer_id=new_app.customer_id, executor_id=new_app.executor_id)
+    # создание у самого себя
+    try:
+        app.save()
+    except IntegrityError as e:
+        raise Exception(e.args[0])
+    return app

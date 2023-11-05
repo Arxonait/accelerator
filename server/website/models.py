@@ -55,17 +55,18 @@ class TypesService(enum.Enum):
     company = "предприятие"
 
 
+class StatusApp(enum.Enum):
+    processing = "processing"
+    denied = "denied"
+    completed = "completed"
+    nviewed = "nviewed"
+
+
 class Applications(models.Model):
     executor = models.ForeignKey("Services", on_delete=models.CASCADE)
     customer = models.ForeignKey("User", on_delete=models.CASCADE)
-    status = models.TextField(null=True)
+    status = models.TextField(default=StatusApp.nviewed.value)
     time_created = models.DateTimeField(auto_now_add=True)
-
-
-class StatusApp(enum.Enum):
-    processing = "обработка"
-    denied = "отказано"
-    completed = "завершено"
 
 
 class Messages(models.Model):

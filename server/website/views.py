@@ -10,9 +10,9 @@ from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
 from website.MVCmodels import (reg_user, enter_user, model_services_sector, model_services, model_edit_user,
-                               model_create_service, model_edit_service, model_create_app)
+                               model_create_service, model_edit_service, model_create_app, model_app)
 from website.support_code.MySerialize import serialize
-from website.models import TypesService, Sessions, Services
+from website.models import TypesService, Sessions, Services, StatusApp, Applications, Messages
 
 
 # Create your views here.
@@ -103,7 +103,6 @@ def service_sector_json(request: HttpRequest):
         data.append(data_dict)
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
-
 
 
 @auth.use_auth
@@ -271,22 +270,42 @@ def patch_controller_user_service(request: HttpRequest, services_id: int = None,
 @csrf_exempt
 def main_controller_user_applications(request: HttpRequest, user_id: int = None):
     if request.method == "GET":
-        return ...
-    elif request.method == "POST":
-        return ...
+        return get_controller_user_application(request, user_id)
     else:
-        error = f"Allowed method GET and POST"
+        error = f"Allowed method GET"
         response = MyResponse([], 405, [error])
         return JsonResponse(response.to_dict(), status=response.response_status)
 
+
+def get_controller_user_application(request: HttpRequest, user_id: int):
+    statuses: str = request.GET.get("statuses")
+    if statuses is not None:
+        statuses: list[str] = statuses.replace(" ", "").split(",")
+        try:
+            support_validate_status_app(statuses)
+        except Exception as e:
+            response = MyResponse([], 409, [str(e)])
+            return JsonResponse(response.to_dict(), status=response.response_status)
+
+    apps = model_app(customer_id=user_id, status=statuses)
+
+    data = []
+    for app in apps:
+        data_app = {
+            "type_obj": "applications",
+            "field": serialize(app),
+            "relationship": support_include_app(app, request.GET.get("include"))
+        }
+        data.append(data_app)
+
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
 @csrf_exempt
-def main_controller_applications(request: HttpRequest, app_id: int):
+def main_controller_applications(request: HttpRequest, app_id: int = None):
     if request.method == "GET":
-        status = request.GET.get("status")
-        if status is None:
-            return ...
-        else:
-            return ...
+        return get_controller_application(request, app_id)
     elif request.method == "POST":
         return post_controller_applications(request)
     else:
@@ -321,18 +340,62 @@ def post_controller_applications(request: HttpRequest, session=None):
 
 
 def get_controller_application(request: HttpRequest, app_id: int):
-    services = model_services(services_id=services_id)
-    if len(services) == 0:
+    apps = model_app(app_id=app_id)
+    if len(apps) == 0:
         error = f"No found"
         response = MyResponse([], 404, [error])
         return JsonResponse(response.to_dict(), status=response.response_status)
-    service = services[0]
+
+    app = apps[0]
+    status_code = 200
+
+    status = request.GET.get("status")
+    if status is not None:
+        try:
+            support_validate_status_app([status])
+        except Exception as e:
+            response = MyResponse([], 409, [str(e)])
+            return JsonResponse(response.to_dict(), status=response.response_status)
+
+        app.status = status
+        app.save()
+        status_code = 202
+
     data = [
         {
-            "type_obj": "services",
-            "field": serialize(service),
-            "relationship": support_include_services(service, request.GET.get("include"))
+            "type_obj": "applications",
+            "field": serialize(app),
+            "relationship": support_include_app(app, request.GET.get("include"))
         }
     ]
-    response = MyResponse(data, 200)
+    response = MyResponse(data, status_code)
     return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def support_validate_status_app(statuses: list[str]):
+    for status in statuses:
+        try:
+            status = getattr(StatusApp, status).value
+        except AttributeError as e:
+            error = f"Допустимые значения для status {[status_name.name for status_name in StatusApp]}"
+            raise Exception(error)
+
+
+def support_include_app(app: Applications, include: str):
+    if include is None:
+        return []
+    include = include.replace(" ", "").split(",")  # повторяющиеся операция
+    relationship = []
+    if "customer" in include:
+        data_user = {
+            "type_obj": "users",
+            "filed": serialize(app.customer, ("password",))
+        }
+        relationship.append(data_user)
+    if "executor" in include:
+        data_sector = {
+            "type_obj": "services",
+            "filed": serialize(app.executor)
+        }
+        relationship.append(data_sector)
+    return relationship

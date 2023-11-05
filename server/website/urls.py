@@ -13,6 +13,6 @@ urlpatterns = [
     path("api/services/<int:services_id>", views.main_controller_user_services),
 
     path("api/users/<int:user_id>/applications", views.main_controller_user_applications),
-    path("api/applications/<int:app_id>", ...),
-    path("api/applications/", ...),
+    path("api/applications/<int:app_id>", views.main_controller_applications),
+    path("api/applications", views.main_controller_applications),
 ]

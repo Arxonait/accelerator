@@ -103,3 +103,15 @@ def model_create_app(new_app: PostApp):
     except IntegrityError as e:
         raise Exception(e.args[0])
     return app
+
+
+def model_app(app_id: int = None, customer_id: int = None, status: list[str] = None) -> list[Applications]:
+    condition = dict()
+    if app_id is not None:
+        condition["pk"] = app_id
+    if customer_id is not None:
+        condition["customer_id"] = customer_id
+    if status is not None:
+        condition["status__in"] = status
+    apps = Applications.objects.filter(**condition).select_related("customer", "executor")
+    return apps

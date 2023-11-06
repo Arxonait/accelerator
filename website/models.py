@@ -51,8 +51,8 @@ class Services(models.Model):
 
 
 class TypesService(enum.Enum):
-    engineer = "инженер"
-    company = "предприятие"
+    engineer = "engineer"
+    company = "company"
 
 
 class StatusApp(enum.Enum):

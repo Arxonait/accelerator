@@ -41,7 +41,7 @@ def model_services_sector():
 
 
 def model_services(type_services: str = None, sectors: list[str] | None = None, user_id: int = None,
-                   services_id: int = None) -> list[Services]:
+                   services_id: int = None, gte: int = None, lte: int = None, search: str = None) -> list[Services]:
     condition = dict()
     if type_services is not None:
         condition["type_service"] = type_services
@@ -51,11 +51,18 @@ def model_services(type_services: str = None, sectors: list[str] | None = None, 
         condition["user_id"] = user_id
     if services_id is not None:
         condition["pk"] = services_id
-    services = Services.objects.filter(**condition).select_related("sector", "user")
+    if search is not None:
+        condition["name_service__icontains"] = search
+    if gte is not None:
+        condition["price__gte"] = gte
+    if lte is not None:
+        condition["price__lte"] = lte
+    services = Services.objects.filter(**condition).select_related("sector", "user").order_by("-time_created")
     return services
 
 
 def model_create_service(new_service: CreatedServices, user_id: int):
+    # todo перейти на англ !!!
     service = Services(user_id=user_id, sector_id=new_service.sector, type_service=new_service.type_service.value,
                        name_service=new_service.name_service, price=new_service.price, about=new_service.about)
     if new_service.type_service == TypesService.company:
@@ -67,10 +74,20 @@ def model_create_service(new_service: CreatedServices, user_id: int):
     return service
 
 
+def model_edit_service(service_id: int, user_id: int, service: EditService):
+    service_bd: Services = Services.objects.filter(id=service_id)[0]
+    if service_bd.user_id != user_id:
+        raise Exception("Not allowed edit service")
+    data = service.model_dump(exclude_none=True)
+    Services.objects.filter(id=service_id).update(**data)
+    service_bd.refresh_from_db()
+    return service_bd
+
+
 def model_edit_user(user_id: int, user: EditUser):
     data = user.model_dump(exclude={"unstructured_data"}, exclude_none=True)
     User.objects.filter(id=user_id).update(**data)  # запрос к бд
-    # todo возможно ли upadate email
+    # todo возмжно ли update email !!!
 
     user_bd: User = User.objects.filter(id=user_id)[0]  # запрос к бд
     if user.unstructured_data is not None:
@@ -83,16 +100,6 @@ def model_edit_user(user_id: int, user: EditUser):
         user_bd.unstructured_data = json.dumps(uns_data_bd)
     user_bd.save()  # запрос к бд
     return user_bd
-
-
-def model_edit_service(service_id: int, user_id: int, service: EditService):
-    service_bd: Services = Services.objects.filter(id=service_id)[0]
-    if service_bd.user_id != user_id:
-        raise Exception("Not allowed edit service")
-    data = service.model_dump(exclude_none=True)
-    Services.objects.filter(id=service_id).update(**data)
-    service_bd.refresh_from_db()
-    return service_bd
 
 
 def model_create_app(new_app: PostApp):
@@ -113,7 +120,7 @@ def model_app(app_id: int = None, customer_id: int = None, status: list[str] = N
         condition["customer_id"] = customer_id
     if status is not None:
         condition["status__in"] = status
-    apps = Applications.objects.filter(**condition).select_related("customer", "executor")
+    apps = Applications.objects.filter(**condition).select_related("customer", "executor").order_by("-time_created")
     return apps
 
 

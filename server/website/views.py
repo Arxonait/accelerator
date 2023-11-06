@@ -82,10 +82,12 @@ def edit_personal_data(request: HttpRequest, session: Sessions):
         return JsonResponse(response.to_dict(), status=response.response_status)
     edit_data_user = model_edit_user(session.user_id, edit_data_user)
 
-    data = [{
-        "type_obj": "users",
-        "fields": serialize(edit_data_user, ("password",))
-    }]
+    data = [
+        {
+            "type_obj": "users",
+            "fields": serialize(edit_data_user, ("password",))
+        }
+    ]
     response = MyResponse(data, 200)
     return JsonResponse(response.to_dict(), status=response.response_status)
 
@@ -143,7 +145,11 @@ def get_controller_services(request: HttpRequest, user_id: int = None):
     if req_sectors is not None:
         req_sectors: list = req_sectors.replace(" ", "").split(",")
 
-    services = model_services(type_services, req_sectors, user_id)
+    price_gte = request.GET.get("price_gte")
+    price_lte = request.GET.get("price_lte")
+    search = request.GET.get("search")
+
+    services = model_services(type_services, req_sectors, user_id, lte=price_lte, gte=price_gte, search=search)
 
     data = []
     for service in services:

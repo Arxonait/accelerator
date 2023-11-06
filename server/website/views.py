@@ -6,11 +6,10 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService, PostApp
+from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService, PostApp, CreatedMessage
 from website.support_code import auth
 from website.support_code.MyResponse import MyResponse
-from website.MVCmodels import (reg_user, enter_user, model_services_sector, model_services, model_edit_user,
-                               model_create_service, model_edit_service, model_create_app, model_app)
+from website.MVCmodels import *
 from website.support_code.MySerialize import serialize
 from website.models import TypesService, Sessions, Services, StatusApp, Applications, Messages
 
@@ -323,7 +322,7 @@ def post_controller_applications(request: HttpRequest, session=None):
         response = MyResponse([], 400, error)
         return JsonResponse(response.to_dict(), status=response.response_status)
     try:
-        app = model_create_app(new_app)
+        app = model_create_message(new_app)
     except Exception as e:
         error = [str(e)]
         response = MyResponse([], 400, error)
@@ -399,3 +398,67 @@ def support_include_app(app: Applications, include: str):
         }
         relationship.append(data_sector)
     return relationship
+
+
+@csrf_exempt
+def main_controller_application_messages(request: HttpRequest, app_id: int):
+    if request.method == "GET":
+        return get_controller_messages(request, app_id)
+    elif request.method == "POST":
+        return post_controller_messages(request, app_id=app_id)
+    else:
+        error = f"Allowed method GET and POST"
+        response = MyResponse([], 405, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+@auth.use_auth
+def post_controller_messages(request: HttpRequest, app_id: int, session: Sessions = None):
+    try:
+        input_message = CreatedMessage(**json.loads(request.body))
+    except ValidationError as e:
+        error: list = e.errors()
+        response = MyResponse([], 400, error)
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    message = model_create_message(input_message, app_id, session.user_id)
+
+    data = [
+        {
+            "type_obj": "messages",
+            "field": serialize(message),
+        }
+    ]
+    response = MyResponse(data, 201)
+    return JsonResponse(response.to_dict(), status=response.response_status)
+
+
+def get_controller_messages(request: HttpRequest, app_id: int):
+    apps = model_app(app_id=app_id)
+    if len(apps) == 0:
+        error = f"No found"
+        response = MyResponse([], 404, [error])
+        return JsonResponse(response.to_dict(), status=response.response_status)
+
+    app = apps[0]
+    mess = model_mess(app_id)
+    data = []
+    for mes in mess:
+        data_mess = {
+            "type_obj": "messages",
+            "field": serialize(mes),
+        }
+        data.append(data_mess)
+
+    include: str = request.GET.get("include")
+    if include is not None:
+        include: list[str] = include.replace(" ", "").split(",")
+        if "application" in include:
+            data_app = {
+                "type_obj": "applications",
+                "field": serialize(app)
+            }
+            data.append(data_app)
+
+    response = MyResponse(data, 200)
+    return JsonResponse(response.to_dict(), status=response.response_status)

@@ -96,3 +96,7 @@ class EditService(CreatedServices):
 class PostApp(BaseModel):
     executor_id: int
     customer_id: int
+
+
+class CreatedMessage(BaseModel):
+    main_text: str

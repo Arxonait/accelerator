@@ -6,7 +6,7 @@ from typing import Tuple
 from pytz import timezone
 
 from website.models import *
-from website.PydanticModels import RegUser, EnterUser, EditUser, CreatedServices, EditService, PostApp
+from website.PydanticModels import *
 from website.support_code.hash_password import convert_password_to_hash
 from django.db import IntegrityError
 
@@ -115,3 +115,20 @@ def model_app(app_id: int = None, customer_id: int = None, status: list[str] = N
         condition["status__in"] = status
     apps = Applications.objects.filter(**condition).select_related("customer", "executor")
     return apps
+
+
+def model_create_message(new_mess: CreatedMessage, app_id: int, user_id: int):
+    # todo настроить дуступ для пользователей
+    mess = Messages(application_id=app_id, main_text=new_mess.main_text, user_id=user_id)
+    # создание у самого себя
+    try:
+        mess.save()
+    except IntegrityError as e:
+        raise Exception(e.args[0])
+    return mess
+
+
+def model_mess(app_id: int) -> list[Messages]:
+    condition = dict()
+    mess = Messages.objects.filter(application_id=app_id).order_by("-time_created")
+    return mess

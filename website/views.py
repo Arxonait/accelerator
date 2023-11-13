@@ -71,6 +71,12 @@ def login_json(request: HttpRequest):
     return response
 
 
+def logout(request: HttpRequest):
+    response = JsonResponse({"status": "ok"}, status=200)
+    response.delete_cookie("session_id")
+    return response
+
+
 @csrf_exempt
 @auth.use_auth
 def edit_personal_data(request: HttpRequest, session: Sessions):

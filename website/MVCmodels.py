@@ -40,7 +40,7 @@ def model_services_sector():
     return services_sector
 
 
-def model_services(type_services: str = None, sectors: list[str] | None = None, user_id: int = None,
+def model_services(type_services: str = None, sectors: list[str] = None, user_id: int = None,
                    services_id: int = None, gte: int = None, lte: int = None, search: str = None) -> list[Services]:
     condition = dict()
     if type_services is not None:
@@ -86,6 +86,7 @@ def model_edit_service(service_id: int, user_id: int, service: EditService):
 
 def model_edit_user(user_id: int, user: EditUser):
     data = user.model_dump(exclude={"unstructured_data"}, exclude_none=True)
+    data["role"] = user.role.value
     User.objects.filter(id=user_id).update(**data)  # запрос к бд
     # todo возмжно ли update email !!!
 

@@ -17,10 +17,10 @@ class User(models.Model):
     role = models.TextField(null=True)
 
 
-# class UserRoles(enum.Enum):
-#     customer = "заказчик"
-#     engineer = "инжинер"
-#     company = "уполномоченный от предприятия"
+class UserRoles(enum.Enum):
+    customer = "customer"
+    engineer = "engineer"
+    company = "company"
 
 
 class Sessions(models.Model):

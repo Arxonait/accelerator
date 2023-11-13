@@ -5,6 +5,8 @@ from website import views
 urlpatterns = [
     path("api/reg", views.registration_user_json),
     path("api/login", views.login_json),
+    path("api/logout", views.logout),
+
     path("api/services_sector", views.service_sector_json),
     path("api/session_to_user", views.get_user_by_session_id),
     path("api/services", views.main_controller_services),
